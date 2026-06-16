@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="家計簿">
+<title>家計簿 Kakeibo</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sage: #8BAF8B;
+  --sage-light: #C8DEC8;
+  --sage-pale: #EEF5EE;
+  --blush: #E8B4A0;
+  --blush-light: #F5DDD5;
+  --blush-pale: #FDF4F0;
+  --sky: #A3C4D4;
+  --sky-light: #D4E8F0;
+  --sky-pale: #EFF6FA;
+  --amber: #D4A96A;
+  --amber-light: #EDD5A8;
+  --amber-pale: #FBF3E6;
+  --stone: #8C8680;
+  --stone-light: #C5C0BA;
+  --stone-pale: #F5F3F0;
+  --ink: #2E2B28;
+  --ink-mid: #6B6460;
+  --bg: #FAFAF7;
+  --white: #FFFFFF;
+  --radius: 16px;
+  --radius-sm: 10px;
+  --shadow: 0 2px 16px rgba(46,43,40,0.07);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; background: var(--bg); font-family: 'DM Sans', sans-serif; color: var(--ink); }
+body { display: flex; flex-direction: column; max-width: 430px; margin: 0 auto; min-height: 100vh; }
+
+/* Auth screen */
+#authScreen {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 100vh; padding: 40px 24px; background: var(--bg);
+}
+.auth-jp { font-family: 'Noto Serif JP', serif; font-size: 52px; font-weight: 300; color: var(--sage); margin-bottom: 8px; }
+.auth-title { font-size: 20px; font-weight: 300; color: var(--ink); margin-bottom: 4px; letter-spacing: 0.05em; }
+.auth-sub { font-size: 13px; color: var(--stone); margin-bottom: 48px; text-align: center; line-height: 1.6; }
+.auth-card { background: var(--white); border-radius: var(--radius); padding: 28px 24px; width: 100%; max-width: 360px; box-shadow: var(--shadow); }
+.auth-label { font-size: 12px; color: var(--stone); letter-spacing: 0.06em; margin-bottom: 6px; display: block; }
+.auth-input { width: 100%; border: 1px solid #E0DDD9; border-radius: var(--radius-sm); padding: 12px 14px; font-size: 15px; font-family: 'DM Sans', sans-serif; color: var(--ink); margin-bottom: 14px; }
+.auth-input:focus { outline: none; border-color: var(--sage); }
+.auth-btn { width: 100%; padding: 14px; background: var(--sage); border: none; border-radius: var(--radius-sm); color: white; font-size: 15px; font-family: 'DM Sans', sans-serif; font-weight: 500; cursor: pointer; margin-bottom: 10px; transition: opacity 0.18s; }
+.auth-btn:active { opacity: 0.8; }
+.auth-btn.secondary { background: var(--white); color: var(--sage); border: 1.5px solid var(--sage-light); }
+.auth-btn.google { background: var(--white); color: var(--ink); border: 1.5px solid #E0DDD9; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.auth-divider { text-align: center; font-size: 12px; color: var(--stone-light); margin: 4px 0 10px; }
+.auth-switch { text-align: center; font-size: 13px; color: var(--stone); margin-top: 16px; cursor: pointer; }
+.auth-switch span { color: var(--sage); font-weight: 500; }
+.auth-error { font-size: 13px; color: #C47560; background: var(--blush-pale); padding: 10px 12px; border-radius: var(--radius-sm); margin-bottom: 12px; display: none; }
+
+/* App */
+#appScreen { display: none; flex-direction: column; min-height: 100vh; }
+
+.app-header {
+  background: var(--white); padding: 16px 20px 0;
+  border-bottom: 1px solid rgba(139,175,139,0.2);
+  position: sticky; top: 0; z-index: 100;
+}
+.header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+.header-left { display: flex; flex-direction: column; }
+.header-title { font-family: 'Noto Serif JP', serif; font-size: 20px; font-weight: 300; color: var(--sage); }
+.header-user { font-size: 11px; color: var(--stone); margin-top: 2px; letter-spacing: 0.04em; }
+.header-right { display: flex; align-items: center; gap: 8px; }
+.month-nav { display: flex; align-items: center; gap: 6px; }
+.month-btn { background: var(--sage-pale); border: none; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; color: var(--sage); font-size: 16px; display: flex; align-items: center; justify-content: center; }
+.month-label { font-size: 12px; font-weight: 500; color: var(--ink); min-width: 75px; text-align: center; }
+.logout-btn { background: none; border: none; font-size: 18px; cursor: pointer; color: var(--stone-light); padding: 4px; }
+.logout-btn:active { color: var(--stone); }
+
+.tab-bar { display: flex; gap: 0; padding: 0 2px; margin-top: 4px; }
+.tab { flex: 1; padding: 9px 2px; background: none; border: none; cursor: pointer; font-size: 11px; color: var(--stone); border-bottom: 2px solid transparent; transition: all 0.2s; letter-spacing: 0.03em; font-family: 'DM Sans', sans-serif; }
+.tab.active { color: var(--sage); border-bottom-color: var(--sage); font-weight: 500; }
+
+.main { flex: 1; overflow-y: auto; padding: 18px; padding-bottom: 30px; }
+.view { display: none; }
+.view.active { display: block; }
+
+/* Sync indicator */
+.sync-bar { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 11px; padding: 6px; background: var(--sage-pale); color: var(--sage); border-radius: var(--radius-sm); margin-bottom: 14px; opacity: 0; transition: opacity 0.3s; }
+.sync-bar.show { opacity: 1; }
+.sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--sage); animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+/* Beranda */
+.progress-wrap { display: flex; align-items: center; gap: 16px; padding: 16px; background: var(--sage-pale); border-radius: var(--radius); margin-bottom: 14px; }
+.ring-svg { transform: rotate(-90deg); flex-shrink: 0; }
+.ring-track { fill: none; stroke: var(--sage-light); stroke-width: 6; }
+.ring-fill { fill: none; stroke: var(--sage); stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset 0.6s ease; }
+.ring-info { flex: 1; }
+.ring-label { font-size: 11px; color: var(--stone); letter-spacing: 0.06em; margin-bottom: 4px; }
+.ring-pct { font-size: 26px; font-weight: 300; color: var(--sage); font-family: 'Noto Serif JP', serif; }
+.ring-sub { font-size: 12px; color: var(--ink-mid); margin-top: 2px; }
+
+.summary-strip { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.summary-card { background: var(--white); border-radius: var(--radius); padding: 14px; box-shadow: var(--shadow); }
+.sc-label { font-size: 11px; color: var(--stone); letter-spacing: 0.05em; margin-bottom: 5px; }
+.sc-val { font-size: 18px; font-weight: 500; }
+.sc-val.green { color: var(--sage); }
+.sc-val.red { color: #C47560; }
+
+.section-title { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--stone); margin-bottom: 10px; }
+.pillar-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.pillar-card { border-radius: var(--radius); padding: 14px; position: relative; overflow: hidden; }
+.pillar-card.needs { background: var(--sage-pale); }
+.pillar-card.wants { background: var(--blush-pale); }
+.pillar-card.culture { background: var(--sky-pale); }
+.pillar-card.unexpected { background: var(--amber-pale); }
+.pillar-jp { font-family: 'Noto Serif JP', serif; font-size: 20px; font-weight: 300; opacity: 0.15; position: absolute; top: 8px; right: 10px; }
+.pillar-name { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px; }
+.pillar-card.needs .pillar-name { color: var(--sage); }
+.pillar-card.wants .pillar-name { color: #C47560; }
+.pillar-card.culture .pillar-name { color: #5A8FA3; }
+.pillar-card.unexpected .pillar-name { color: #B8873A; }
+.pillar-amount { font-size: 16px; font-weight: 500; color: var(--ink); }
+.pillar-sub { font-size: 10px; color: var(--stone); margin-top: 2px; }
+.pillar-bar-wrap { margin-top: 10px; height: 4px; background: rgba(0,0,0,0.08); border-radius: 99px; overflow: hidden; }
+.pillar-bar { height: 100%; border-radius: 99px; }
+.pillar-card.needs .pillar-bar { background: var(--sage); }
+.pillar-card.wants .pillar-bar { background: var(--blush); }
+.pillar-card.culture .pillar-bar { background: var(--sky); }
+.pillar-card.unexpected .pillar-bar { background: var(--amber); }
+
+.month-card { background: var(--white); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow); margin-bottom: 14px; }
+.budget-set { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+.budget-set label { font-size: 13px; color: var(--ink-mid); flex: 1; }
+.budget-input { width: 140px; border: 1px solid var(--sage-light); border-radius: var(--radius-sm); padding: 8px 10px; font-size: 14px; font-family: 'DM Sans', sans-serif; text-align: right; background: var(--white); color: var(--ink); }
+.budget-input:focus { outline: none; border-color: var(--sage); }
+
+/* Catat */
+.form-card { background: var(--white); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); margin-bottom: 14px; }
+.form-label { font-size: 12px; color: var(--stone); letter-spacing: 0.06em; margin-bottom: 6px; display: block; }
+.form-input { width: 100%; border: 1px solid #E0DDD9; border-radius: var(--radius-sm); padding: 11px 14px; font-size: 15px; font-family: 'DM Sans', sans-serif; color: var(--ink); background: var(--white); margin-bottom: 14px; }
+.form-input:focus { outline: none; border-color: var(--sage); }
+.form-input::placeholder { color: var(--stone-light); }
+.type-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 14px; }
+.type-btn { padding: 10px; border: 1px solid #E0DDD9; border-radius: var(--radius-sm); background: var(--white); font-size: 13px; font-family: 'DM Sans', sans-serif; cursor: pointer; color: var(--stone); transition: all 0.18s; }
+.type-btn.sel-masuk { background: var(--sage-pale); border-color: var(--sage); color: var(--sage); font-weight: 500; }
+.type-btn.sel-keluar { background: var(--blush-pale); border-color: var(--blush); color: #C47560; font-weight: 500; }
+.pillar-select { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 14px; }
+.pillar-btn { padding: 10px 8px; border: 1px solid #E0DDD9; border-radius: var(--radius-sm); background: var(--white); font-size: 12px; font-family: 'DM Sans', sans-serif; cursor: pointer; color: var(--stone); text-align: center; transition: all 0.18s; }
+.pillar-btn[data-p="needs"].sel { background: var(--sage-pale); border-color: var(--sage); color: var(--sage); font-weight: 500; }
+.pillar-btn[data-p="wants"].sel { background: var(--blush-pale); border-color: var(--blush); color: #C47560; font-weight: 500; }
+.pillar-btn[data-p="culture"].sel { background: var(--sky-pale); border-color: var(--sky); color: #5A8FA3; font-weight: 500; }
+.pillar-btn[data-p="unexpected"].sel { background: var(--amber-pale); border-color: var(--amber); color: #B8873A; font-weight: 500; }
+.pillar-btn-jp { display: block; font-family: 'Noto Serif JP', serif; font-size: 15px; font-weight: 300; opacity: 0.45; }
+.save-btn { width: 100%; padding: 14px; background: var(--sage); border: none; border-radius: var(--radius); color: white; font-size: 15px; font-family: 'DM Sans', sans-serif; font-weight: 500; cursor: pointer; transition: opacity 0.18s; }
+.save-btn:active { opacity: 0.8; }
+
+/* Riwayat */
+.month-group { margin-bottom: 18px; }
+.month-group-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--stone); margin-bottom: 8px; padding-left: 2px; }
+.txn-item { background: var(--white); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 7px; display: flex; align-items: center; gap: 10px; box-shadow: 0 1px 6px rgba(46,43,40,0.06); }
+.txn-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.txn-dot.needs { background: var(--sage); }
+.txn-dot.wants { background: var(--blush); }
+.txn-dot.culture { background: var(--sky); }
+.txn-dot.unexpected { background: var(--amber); }
+.txn-dot.income { background: var(--sage); }
+.txn-info { flex: 1; min-width: 0; }
+.txn-desc { font-size: 14px; font-weight: 400; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.txn-meta { font-size: 11px; color: var(--stone); margin-top: 2px; }
+.txn-amount { font-size: 13px; font-weight: 500; white-space: nowrap; }
+.txn-amount.in { color: var(--sage); }
+.txn-amount.out { color: #C47560; }
+.txn-del { background: none; border: none; padding: 6px; color: var(--stone-light); font-size: 17px; cursor: pointer; flex-shrink: 0; }
+
+/* Refleksi */
+.refleksi-card { background: var(--white); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); margin-bottom: 14px; }
+.refleksi-card h3 { font-family: 'Noto Serif JP', serif; font-size: 15px; font-weight: 300; color: var(--ink); margin-bottom: 4px; }
+.refleksi-card .sub { font-size: 12px; color: var(--stone); margin-bottom: 12px; }
+.refleksi-ta { width: 100%; min-height: 80px; border: 1px solid #E0DDD9; border-radius: var(--radius-sm); padding: 12px; font-size: 14px; font-family: 'DM Sans', sans-serif; color: var(--ink); resize: none; background: var(--stone-pale); }
+.refleksi-ta:focus { outline: none; border-color: var(--sage); background: var(--white); }
+
+/* Data */
+.settings-card { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 14px; overflow: hidden; }
+.settings-item { padding: 15px 18px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(0,0,0,0.05); cursor: pointer; }
+.settings-item:last-child { border-bottom: none; }
+.settings-item:active { background: var(--stone-pale); }
+.si-label { font-size: 14px; color: var(--ink); }
+.si-sub { font-size: 11px; color: var(--stone); margin-top: 2px; }
+.si-arrow { color: var(--stone-light); font-size: 16px; }
+
+/* Toast */
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--ink); color: white; padding: 10px 20px; border-radius: 99px; font-size: 13px; opacity: 0; transition: all 0.3s; z-index: 999; white-space: nowrap; pointer-events: none; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* Modal */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(46,43,40,0.4); z-index: 200; align-items: flex-end; justify-content: center; }
+.modal-overlay.open { display: flex; }
+.modal-box { background: var(--white); border-radius: var(--radius) var(--radius) 0 0; padding: 24px 20px 40px; width: 100%; max-width: 430px; }
+.modal-title { font-family: 'Noto Serif JP', serif; font-size: 17px; font-weight: 300; margin-bottom: 14px; color: var(--ink); }
+.modal-btn { width: 100%; padding: 13px; border: 1px solid #E0DDD9; border-radius: var(--radius-sm); background: var(--white); font-size: 14px; font-family: 'DM Sans', sans-serif; cursor: pointer; margin-bottom: 8px; color: var(--ink); text-align: left; padding-left: 16px; }
+.modal-btn.danger { color: #C47560; border-color: #E8C5BB; }
+.modal-cancel { width: 100%; padding: 13px; border: none; background: var(--stone-pale); border-radius: var(--radius-sm); font-size: 14px; font-family: 'DM Sans', sans-serif; cursor: pointer; color: var(--stone); margin-top: 4px; }
+
+.empty-state { text-align: center; padding: 40px 20px; color: var(--stone); }
+.empty-jp { font-family: 'Noto Serif JP', serif; font-size: 36px; font-weight: 300; opacity: 0.2; margin-bottom: 12px; }
+.loading-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; gap: 16px; }
+.loading-jp { font-family: 'Noto Serif JP', serif; font-size: 40px; font-weight: 300; color: var(--sage); }
+.loading-text { font-size: 13px; color: var(--stone); }
+</style>
+</head>
+<body>
+
+<!-- Loading -->
+<div id="loadingScreen" class="loading-screen">
+  <div class="loading-jp">家計簿</div>
+  <div class="loading-text">Memuat…</div>
+</div>
+
+<!-- Auth Screen -->
+<div id="authScreen" style="display:none;">
+  <div class="auth-jp">家計簿</div>
+  <div class="auth-title">Kakeibo</div>
+  <div class="auth-sub">Buku keuangan pribadi<br>Sync otomatis di semua perangkat</div>
+  <div class="auth-card">
+    <div class="auth-error" id="authError"></div>
+    <div id="authFormLogin">
+      <label class="auth-label">EMAIL</label>
+      <input class="auth-input" type="email" id="loginEmail" placeholder="email@kamu.com" autocomplete="email">
+      <label class="auth-label">PASSWORD</label>
+      <input class="auth-input" type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
+      <button class="auth-btn" onclick="doLogin()">Masuk</button>
+      <div class="auth-divider">atau</div>
+      <button class="auth-btn google" onclick="doGoogleLogin()">
+        <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 6.293C4.672 4.166 6.656 3.58 9 3.58z"/></svg>
+        Masuk dengan Google
+      </button>
+      <div class="auth-switch">Belum punya akun? <span onclick="showRegister()">Daftar</span></div>
+    </div>
+    <div id="authFormRegister" style="display:none;">
+      <label class="auth-label">EMAIL</label>
+      <input class="auth-input" type="email" id="regEmail" placeholder="email@kamu.com" autocomplete="email">
+      <label class="auth-label">PASSWORD</label>
+      <input class="auth-input" type="password" id="regPassword" placeholder="Min. 6 karakter" autocomplete="new-password">
+      <button class="auth-btn" onclick="doRegister()">Buat Akun</button>
+      <div class="auth-switch">Sudah punya akun? <span onclick="showLogin()">Masuk</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- App Screen -->
+<div id="appScreen" style="display:none; flex-direction:column; min-height:100vh;">
+  <div class="app-header">
+    <div class="header-top">
+      <div class="header-left">
+        <div class="header-title">家計簿</div>
+        <div class="header-user" id="headerUser"></div>
+      </div>
+      <div class="header-right">
+        <div class="month-nav">
+          <button class="month-btn" onclick="changeMonth(-1)">‹</button>
+          <div class="month-label" id="monthLabel"></div>
+          <button class="month-btn" onclick="changeMonth(1)">›</button>
+        </div>
+        <button class="logout-btn" onclick="doLogout()" title="Keluar">⏻</button>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <button class="tab active" onclick="switchTab('beranda')">Beranda</button>
+      <button class="tab" onclick="switchTab('catat')">Catat</button>
+      <button class="tab" onclick="switchTab('riwayat')">Riwayat</button>
+      <button class="tab" onclick="switchTab('refleksi')">Refleksi</button>
+      <button class="tab" onclick="switchTab('data')">Data</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="sync-bar" id="syncBar"><div class="sync-dot"></div> Menyimpan ke cloud…</div>
+
+    <!-- BERANDA -->
+    <div id="view-beranda" class="view active">
+      <div class="progress-wrap">
+        <svg width="68" height="68" class="ring-svg">
+          <circle class="ring-track" cx="34" cy="34" r="28"/>
+          <circle class="ring-fill" id="ringFill" cx="34" cy="34" r="28" stroke-dasharray="175.9" stroke-dashoffset="175.9"/>
+        </svg>
+        <div class="ring-info">
+          <div class="ring-label">PROGRES TABUNGAN</div>
+          <div class="ring-pct" id="savingsPct">0%</div>
+          <div class="ring-sub" id="savingsSub">Tetapkan target dulu</div>
+        </div>
+      </div>
+      <div class="summary-strip" id="summaryStrip"></div>
+      <div class="section-title">Empat Pilar Kakeibo</div>
+      <div class="pillar-grid" id="pillarGrid"></div>
+      <div class="month-card">
+        <div style="font-size:12px;color:var(--stone);letter-spacing:0.06em;margin-bottom:4px;">TARGET TABUNGAN BULAN INI</div>
+        <div class="budget-set">
+          <label>Rp</label>
+          <input class="budget-input" type="number" id="budgetTarget" placeholder="0" onchange="saveBudget()" onblur="saveBudget()">
+        </div>
+      </div>
+    </div>
+
+    <!-- CATAT -->
+    <div id="view-catat" class="view">
+      <div class="form-card">
+        <div class="type-toggle">
+          <button class="type-btn sel-masuk" id="btnMasuk" onclick="setEntryType('pemasukan')">+ Pemasukan</button>
+          <button class="type-btn" id="btnKeluar" onclick="setEntryType('pengeluaran')">− Pengeluaran</button>
+        </div>
+        <label class="form-label">DESKRIPSI</label>
+        <input class="form-input" type="text" id="desc" placeholder="mis. Gaji, kopi pagi, buku…">
+        <label class="form-label">JUMLAH (Rp)</label>
+        <input class="form-input" type="number" id="amount" placeholder="0" inputmode="numeric">
+        <label class="form-label">TANGGAL</label>
+        <input class="form-input" type="date" id="tgl">
+        <div id="pillarWrap">
+          <label class="form-label">PILAR PENGELUARAN</label>
+          <div class="pillar-select">
+            <button class="pillar-btn sel" data-p="needs" onclick="setPillar('needs')"><span class="pillar-btn-jp">必要</span>Needs</button>
+            <button class="pillar-btn" data-p="wants" onclick="setPillar('wants')"><span class="pillar-btn-jp">欲しい</span>Wants</button>
+            <button class="pillar-btn" data-p="culture" onclick="setPillar('culture')"><span class="pillar-btn-jp">文化</span>Culture</button>
+            <button class="pillar-btn" data-p="unexpected" onclick="setPillar('unexpected')"><span class="pillar-btn-jp">予期</span>Unexpected</button>
+          </div>
+        </div>
+        <label class="form-label">CATATAN (opsional)</label>
+        <input class="form-input" type="text" id="note" placeholder="mis. makan siang bareng teman">
+        <button class="save-btn" onclick="saveEntry()">Simpan</button>
+      </div>
+    </div>
+
+    <!-- RIWAYAT -->
+    <div id="view-riwayat" class="view">
+      <div id="historyList"></div>
+    </div>
+
+    <!-- REFLEKSI -->
+    <div id="view-refleksi" class="view">
+      <div class="refleksi-card">
+        <h3>Berapa yang kumiliki?</h3>
+        <div class="sub">Pemasukan bulan ini</div>
+        <div id="refl-income" style="font-size:22px;font-weight:500;color:var(--sage);"></div>
+      </div>
+      <div class="refleksi-card">
+        <h3>Berapa yang ingin kutabung?</h3>
+        <div class="sub">Target yang kamu tetapkan</div>
+        <div id="refl-target" style="font-size:22px;font-weight:500;color:var(--sky);"></div>
+      </div>
+      <div class="refleksi-card">
+        <h3>Berapa yang kuhabiskan?</h3>
+        <div class="sub">Total pengeluaran bulan ini</div>
+        <div id="refl-spent" style="font-size:22px;font-weight:500;color:var(--blush);margin-bottom:10px;"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;" id="refl-pillars"></div>
+      </div>
+      <div class="refleksi-card">
+        <h3>Bagaimana aku bisa lebih baik?</h3>
+        <div class="sub">Refleksi jujurmu bulan ini</div>
+        <textarea class="refleksi-ta" id="reflNote" placeholder="Bulan ini aku belajar bahwa…" oninput="saveRefl()" rows="4"></textarea>
+      </div>
+      <div class="refleksi-card" style="background:var(--sage-pale);box-shadow:none;">
+        <div style="font-family:'Noto Serif JP',serif;font-size:13px;color:var(--sage);line-height:2;font-weight:300;">
+          「家計簿を通じて、お金と向き合う」<br>
+          <span style="font-size:11px;color:var(--stone);">Melalui kakeibo, kita berhadapan dengan uang secara jujur.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- DATA -->
+    <div id="view-data" class="view">
+      <div class="section-title">Ekspor & Impor</div>
+      <div class="settings-card">
+        <div class="settings-item" onclick="exportData()">
+          <div><div class="si-label">Ekspor Data (JSON)</div><div class="si-sub">Cadangan lokal ke file</div></div>
+          <div class="si-arrow">↓</div>
+        </div>
+        <div class="settings-item" onclick="triggerImport()">
+          <div><div class="si-label">Impor Data (JSON)</div><div class="si-sub">Muat dari file cadangan</div></div>
+          <div class="si-arrow">↑</div>
+        </div>
+      </div>
+      <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+
+      <div class="section-title">Kelola Akun</div>
+      <div class="settings-card">
+        <div class="settings-item" onclick="doLogout()">
+          <div><div class="si-label">Keluar</div><div class="si-sub">Data tetap tersimpan di cloud</div></div>
+          <div class="si-arrow">→</div>
+        </div>
+        <div class="settings-item" onclick="confirmReset()">
+          <div><div class="si-label" style="color:#C47560;">Hapus semua data bulan ini</div><div class="si-sub">Tidak bisa dibatalkan</div></div>
+          <div class="si-arrow" style="color:#C47560;">✕</div>
+        </div>
+      </div>
+
+      <div style="background:var(--white);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);font-size:13px;color:var(--ink-mid);line-height:1.9;">
+        <div style="font-weight:500;color:var(--ink);margin-bottom:8px;">☁ Cloud Sync Aktif</div>
+        Data tersimpan otomatis ke Firebase setiap kali kamu menyimpan transaksi. Login dengan akun yang sama di HP lain untuk mengakses semua data.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal-box">
+    <div class="modal-title" id="modalTitle"></div>
+    <div id="modalContent"></div>
+    <button class="modal-cancel" onclick="closeModal()">Batal</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Firebase SDKs -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, collection, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCSUDTu8ZlBEwIbc8DgIpSzgjs3kp-9ppI",
+  authDomain: "kakeibo-79e3d.firebaseapp.com",
+  projectId: "kakeibo-79e3d",
+  storageBucket: "kakeibo-79e3d.firebasestorage.app",
+  messagingSenderId: "504841053412",
+  appId: "1:504841053412:web:0812507b92068d1dacf8f1"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const googleProvider = new GoogleAuthProvider();
+
+const MONTH_NAMES = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+const PILLARS = {
+  needs: { label: 'Needs', jp: '必要', sub: 'Kebutuhan dasar' },
+  wants: { label: 'Wants', jp: '欲しい', sub: 'Keinginan' },
+  culture: { label: 'Culture', jp: '文化', sub: 'Tumbuh & belajar' },
+  unexpected: { label: 'Unexpected', jp: '予期', sub: 'Tak terduga' }
+};
+
+let currentUser = null;
+let viewYear = new Date().getFullYear();
+let viewMonth = new Date().getMonth();
+let currentType = 'pemasukan';
+let currentPillar = 'needs';
+let localCache = {};
+let saveTimeout = null;
+
+function getMonthKey(y, m) { return `${y}-${String(m+1).padStart(2,'0')}`; }
+function fmt(n) { return 'Rp ' + Math.round(Math.abs(n)).toLocaleString('id-ID'); }
+
+// ── AUTH ──
+window.showRegister = () => {
+  document.getElementById('authFormLogin').style.display = 'none';
+  document.getElementById('authFormRegister').style.display = 'block';
+  document.getElementById('authError').style.display = 'none';
+};
+window.showLogin = () => {
+  document.getElementById('authFormRegister').style.display = 'none';
+  document.getElementById('authFormLogin').style.display = 'block';
+  document.getElementById('authError').style.display = 'none';
+};
+
+function showAuthError(msg) {
+  const el = document.getElementById('authError');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function friendlyError(code) {
+  const map = {
+    'auth/invalid-email': 'Format email tidak valid.',
+    'auth/user-not-found': 'Email tidak ditemukan.',
+    'auth/wrong-password': 'Password salah.',
+    'auth/email-already-in-use': 'Email sudah terdaftar.',
+    'auth/weak-password': 'Password minimal 6 karakter.',
+    'auth/popup-closed-by-user': 'Login dibatalkan.',
+    'auth/invalid-credential': 'Email atau password salah.',
+    'auth/network-request-failed': 'Tidak ada koneksi internet.',
+  };
+  return map[code] || 'Terjadi kesalahan. Coba lagi.';
+}
+
+window.doLogin = async () => {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPassword').value;
+  if (!email || !pass) { showAuthError('Isi email dan password ya.'); return; }
+  try { await signInWithEmailAndPassword(auth, email, pass); }
+  catch(e) { showAuthError(friendlyError(e.code)); }
+};
+
+window.doRegister = async () => {
+  const email = document.getElementById('regEmail').value.trim();
+  const pass = document.getElementById('regPassword').value;
+  if (!email || !pass) { showAuthError('Isi email dan password ya.'); return; }
+  try { await createUserWithEmailAndPassword(auth, email, pass); }
+  catch(e) { showAuthError(friendlyError(e.code)); }
+};
+
+window.doGoogleLogin = async () => {
+  try { await signInWithPopup(auth, googleProvider); }
+  catch(e) { showAuthError(friendlyError(e.code)); }
+};
+
+window.doLogout = async () => {
+  await signOut(auth);
+};
+
+// ── AUTH STATE ──
+onAuthStateChanged(auth, async (user) => {
+  document.getElementById('loadingScreen').style.display = 'none';
+  if (user) {
+    currentUser = user;
+    document.getElementById('authScreen').style.display = 'none';
+    document.getElementById('appScreen').style.display = 'flex';
+    document.getElementById('headerUser').textContent = user.email || user.displayName || '';
+    await loadAllData();
+    renderAll();
+  } else {
+    currentUser = null;
+    localCache = {};
+    document.getElementById('appScreen').style.display = 'none';
+    document.getElementById('authScreen').style.display = 'flex';
+  }
+});
+
+// ── FIRESTORE ──
+function userRef(path) {
+  return doc(db, 'users', currentUser.uid, path);
+}
+
+async function loadAllData() {
+  try {
+    const snap = await getDocs(collection(db, 'users', currentUser.uid, 'months'));
+    localCache = {};
+    snap.forEach(d => { localCache[d.id] = d.data(); });
+  } catch(e) { console.error('Load error:', e); }
+}
+
+async function saveMonthToCloud(key) {
+  if (!currentUser) return;
+  showSync(true);
+  try {
+    await setDoc(doc(db, 'users', currentUser.uid, 'months', key), localCache[key] || {});
+  } catch(e) { showToast('Gagal sync ☁'); console.error(e); }
+  showSync(false);
+}
+
+function queueSave(key) {
+  if (saveTimeout) clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(() => saveMonthToCloud(key), 800);
+}
+
+function showSync(on) {
+  document.getElementById('syncBar').classList.toggle('show', on);
+}
+
+// ── DATA HELPERS ──
+function getMonth(y, m) {
+  const k = getMonthKey(y, m);
+  if (!localCache[k]) localCache[k] = { entries: [], budget: 0, refl: '' };
+  return { key: k, month: localCache[k] };
+}
+
+function monthEntries(y, m) { return getMonth(y, m).month.entries || []; }
+
+// ── UI ──
+window.changeMonth = (dir) => {
+  viewMonth += dir;
+  if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+  if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+  renderAll();
+};
+
+window.switchTab = (name) => {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', ['beranda','catat','riwayat','refleksi','data'][i] === name);
+  });
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  if (name === 'refleksi') renderRefleksi();
+  if (name === 'riwayat') renderHistory();
+};
+
+window.setEntryType = (t) => {
+  currentType = t;
+  document.getElementById('btnMasuk').className = 'type-btn' + (t === 'pemasukan' ? ' sel-masuk' : '');
+  document.getElementById('btnKeluar').className = 'type-btn' + (t === 'pengeluaran' ? ' sel-keluar' : '');
+  document.getElementById('pillarWrap').style.display = t === 'pengeluaran' ? 'block' : 'none';
+};
+
+window.setPillar = (p) => {
+  currentPillar = p;
+  document.querySelectorAll('.pillar-btn').forEach(b => b.classList.toggle('sel', b.dataset.p === p));
+};
+
+window.saveEntry = () => {
+  const desc = document.getElementById('desc').value.trim();
+  const amount = parseFloat(document.getElementById('amount').value);
+  const tgl = document.getElementById('tgl').value;
+  const note = document.getElementById('note').value.trim();
+  if (!desc || !amount || amount <= 0 || !tgl) { showToast('Lengkapi deskripsi, jumlah, dan tanggal!'); return; }
+
+  const d = new Date(tgl);
+  const { key, month } = getMonth(d.getFullYear(), d.getMonth());
+  if (!month.entries) month.entries = [];
+  month.entries.push({ id: Date.now(), type: currentType, desc, amount, pillar: currentType === 'pengeluaran' ? currentPillar : 'income', note, tgl });
+  queueSave(key);
+
+  document.getElementById('desc').value = '';
+  document.getElementById('amount').value = '';
+  document.getElementById('note').value = '';
+  showToast('Tersimpan ✓');
+  renderAll();
+  switchTab('beranda');
+};
+
+window.saveBudget = () => {
+  const val = parseFloat(document.getElementById('budgetTarget').value) || 0;
+  const { key, month } = getMonth(viewYear, viewMonth);
+  month.budget = val;
+  queueSave(key);
+  renderBeranda();
+};
+
+window.saveRefl = () => {
+  const val = document.getElementById('reflNote').value;
+  const { key, month } = getMonth(viewYear, viewMonth);
+  month.refl = val;
+  queueSave(key);
+};
+
+window.deleteEntry = (id, y, m) => {
+  const { key, month } = getMonth(y, m);
+  month.entries = (month.entries || []).filter(e => e.id !== id);
+  queueSave(key);
+  renderHistory();
+  renderBeranda();
+  showToast('Dihapus');
+};
+
+// ── RENDER ──
+function renderBeranda() {
+  const entries = monthEntries(viewYear, viewMonth);
+  const { month } = getMonth(viewYear, viewMonth);
+  const income = entries.filter(e => e.type === 'pemasukan').reduce((s, e) => s + e.amount, 0);
+  const expense = entries.filter(e => e.type === 'pengeluaran').reduce((s, e) => s + e.amount, 0);
+  const budget = month.budget || 0;
+  const saved = income - expense;
+  const pct = budget > 0 ? Math.min(Math.max(saved / budget * 100, 0), 100) : 0;
+
+  document.getElementById('monthLabel').textContent = MONTH_NAMES[viewMonth].slice(0,3) + ' ' + viewYear;
+  document.getElementById('budgetTarget').value = budget || '';
+
+  const circ = 2 * Math.PI * 28;
+  document.getElementById('ringFill').style.strokeDasharray = circ;
+  document.getElementById('ringFill').style.strokeDashoffset = (circ * (1 - pct / 100)).toFixed(2);
+  document.getElementById('savingsPct').textContent = Math.round(pct) + '%';
+  document.getElementById('savingsSub').textContent = budget > 0 ? fmt(Math.max(0, saved)) + ' dari ' + fmt(budget) : 'Tetapkan target tabungan';
+
+  document.getElementById('summaryStrip').innerHTML = `
+    <div class="summary-card"><div class="sc-label">PEMASUKAN</div><div class="sc-val green">${fmt(income)}</div></div>
+    <div class="summary-card"><div class="sc-label">PENGELUARAN</div><div class="sc-val red">${fmt(expense)}</div></div>`;
+
+  const pt = {};
+  entries.filter(e => e.type === 'pengeluaran').forEach(e => { pt[e.pillar] = (pt[e.pillar] || 0) + e.amount; });
+  document.getElementById('pillarGrid').innerHTML = Object.entries(PILLARS).map(([k, p]) => {
+    const amt = pt[k] || 0;
+    const bar = expense > 0 ? Math.min(amt / expense * 100, 100) : 0;
+    return `<div class="pillar-card ${k}"><div class="pillar-jp">${p.jp}</div><div class="pillar-name">${p.label}</div><div class="pillar-amount">${fmt(amt)}</div><div class="pillar-sub">${p.sub}</div><div class="pillar-bar-wrap"><div class="pillar-bar" style="width:${bar.toFixed(1)}%"></div></div></div>`;
+  }).join('');
+}
+
+function renderHistory() {
+  const hl = document.getElementById('historyList');
+  const keys = Object.keys(localCache).sort().reverse();
+  const hasEntries = keys.some(k => (localCache[k].entries || []).length > 0);
+  if (!hasEntries) {
+    hl.innerHTML = '<div class="empty-state"><div class="empty-jp">記録</div><div class="empty-text">Belum ada transaksi.<br>Mulai catat keuanganmu!</div></div>';
+    return;
+  }
+  hl.innerHTML = keys.map(k => {
+    const entries = (localCache[k].entries || []).slice().sort((a, b) => new Date(b.tgl) - new Date(a.tgl));
+    if (!entries.length) return '';
+    const [y, m] = k.split('-').map(Number);
+    return `<div class="month-group"><div class="month-group-label">${MONTH_NAMES[m-1]} ${y}</div>${entries.map(e => `
+      <div class="txn-item">
+        <div class="txn-dot ${e.pillar}"></div>
+        <div class="txn-info"><div class="txn-desc">${e.desc}</div><div class="txn-meta">${e.type === 'pengeluaran' ? (PILLARS[e.pillar]?.label || e.pillar) : 'Pemasukan'} · ${e.tgl}${e.note ? ' · ' + e.note : ''}</div></div>
+        <div class="txn-amount ${e.type === 'pemasukan' ? 'in' : 'out'}">${e.type === 'pemasukan' ? '+' : '−'}${fmt(e.amount)}</div>
+        <button class="txn-del" onclick="deleteEntry(${e.id},${y},${m-1})">×</button>
+      </div>`).join('')}</div>`;
+  }).join('');
+}
+
+function renderRefleksi() {
+  const entries = monthEntries(viewYear, viewMonth);
+  const { month } = getMonth(viewYear, viewMonth);
+  const income = entries.filter(e => e.type === 'pemasukan').reduce((s, e) => s + e.amount, 0);
+  const expense = entries.filter(e => e.type === 'pengeluaran').reduce((s, e) => s + e.amount, 0);
+  document.getElementById('refl-income').textContent = fmt(income);
+  document.getElementById('refl-target').textContent = month.budget ? fmt(month.budget) : 'Belum ditetapkan';
+  document.getElementById('refl-spent').textContent = fmt(expense);
+  document.getElementById('reflNote').value = month.refl || '';
+  const pt = {};
+  entries.filter(e => e.type === 'pengeluaran').forEach(e => { pt[e.pillar] = (pt[e.pillar] || 0) + e.amount; });
+  document.getElementById('refl-pillars').innerHTML = Object.entries(PILLARS).map(([k, p]) =>
+    `<div style="background:var(--stone-pale);border-radius:var(--radius-sm);padding:10px 12px;"><div style="font-size:11px;color:var(--stone);margin-bottom:3px;">${p.label}</div><div style="font-size:14px;font-weight:500;">${fmt(pt[k] || 0)}</div></div>`
+  ).join('');
+}
+
+function renderAll() {
+  renderBeranda();
+}
+
+// ── EXPORT / IMPORT ──
+window.exportData = () => {
+  const blob = new Blob([JSON.stringify(localCache, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `kakeibo-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Data diekspor!');
+};
+
+window.triggerImport = () => document.getElementById('importFile').click();
+
+window.importData = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async (ev) => {
+    try {
+      const imported = JSON.parse(ev.target.result);
+      for (const k of Object.keys(imported)) {
+        if (!localCache[k]) localCache[k] = imported[k];
+        else {
+          const existIds = new Set((localCache[k].entries || []).map(x => x.id));
+          (imported[k].entries || []).forEach(en => { if (!existIds.has(en.id)) localCache[k].entries.push(en); });
+          if (!localCache[k].budget && imported[k].budget) localCache[k].budget = imported[k].budget;
+          if (!localCache[k].refl && imported[k].refl) localCache[k].refl = imported[k].refl;
+        }
+        await saveMonthToCloud(k);
+      }
+      renderAll();
+      showToast('Data berhasil diimpor!');
+    } catch(err) { showToast('File tidak valid'); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+};
+
+// ── MODAL & UTILS ──
+window.confirmReset = () => {
+  document.getElementById('modalTitle').textContent = 'Hapus data bulan ini?';
+  document.getElementById('modalContent').innerHTML = `<p style="font-size:14px;color:var(--stone);margin-bottom:14px;line-height:1.6;">Semua transaksi ${MONTH_NAMES[viewMonth]} ${viewYear} akan dihapus permanen.</p><button class="modal-btn danger" onclick="doReset()">Ya, hapus</button>`;
+  document.getElementById('modalOverlay').classList.add('open');
+};
+
+window.doReset = async () => {
+  const { key, month } = getMonth(viewYear, viewMonth);
+  month.entries = []; month.budget = 0; month.refl = '';
+  await saveMonthToCloud(key);
+  closeModal();
+  renderAll();
+  showToast('Data bulan ini dihapus');
+};
+
+window.closeModal = (e) => {
+  if (!e || e.target === document.getElementById('modalOverlay'))
+    document.getElementById('modalOverlay').classList.remove('open');
+};
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ── INIT ──
+window.setEntryType('pemasukan');
+document.getElementById('tgl').valueAsDate = new Date();
+document.getElementById('monthLabel').textContent = MONTH_NAMES[viewMonth].slice(0,3) + ' ' + new Date().getFullYear();
+</script>
+</body>
+</html>
